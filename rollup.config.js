@@ -1,28 +1,37 @@
-import path from "node:path";
-import { defineConfig } from "rollup";
+import path from 'path'
+import { defineConfig } from 'rollup'
 
-import Commonjs from "@rollup/plugin-commonjs";
-import Babel from "@rollup/plugin-babel";
-import VuePlugin from "rollup-plugin-vue";
-
-function resolvePath(dir, baseDir = process.cwd()) {
-  return path.resolve(baseDir, dir);
-}
+import clear from 'rollup-plugin-clear'
+import vue from 'rollup-plugin-vue'
+import babel from '@rollup/plugin-babel'
+import terser from '@rollup/plugin-terser'
+import commonjs from '@rollup/plugin-commonjs'
 
 export default defineConfig([
   {
-    input: resolvePath("./src/index.js"),
+    input: resolvePath('src/index.js'),
     output: {
-      file: resolvePath("./dist/index.js"),
-      format: "esm",
+      file: resolvePath('dist/index.js'),
+      format: 'esm'
     },
     plugins: [
-      Commonjs(),
-      Babel({
-        exclude: /node_modules/,
-        babelHelpers: "runtime",
+      clear({
+        targets: [resolvePath('dist')]
       }),
-      VuePlugin(),
-    ],
-  },
-]);
+      vue(),
+      commonjs({
+        defaultIsModuleExports: false
+      }),
+      babel({
+        babelHelpers: 'runtime',
+        exclude: 'node_modules/**',
+        extensions: ['.js', '.vue']
+      })
+      // terser(),
+    ]
+  }
+])
+
+function resolvePath(dir) {
+  return path.resolve(process.cwd(), dir)
+}

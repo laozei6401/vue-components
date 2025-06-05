@@ -1,2 +1,8 @@
-import SchemaTable from './components/schema-table/index.js';
-export default SchemaTable;
+import SchemaTable from './components/schema-table';
+import schemaTable from './components/schema-table';
+
+function install(Vue) {
+  Vue.component(schemaTable.name, schemaTable);
+}
+
+export { install as default, SchemaTable };
