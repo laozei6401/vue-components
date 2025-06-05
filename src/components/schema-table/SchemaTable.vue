@@ -1,8 +1,5 @@
 <script>
-import { cloneDeep, isFunction, isNil, merge } from 'lodash-es'
-
-import TableComponent from 'element-ui/lib/table'
-import TableColumnComponent from 'element-ui/lib/table-column'
+import { cloneDeep, isFunction, isNil, merge, get } from 'lodash-es'
 
 export default {
   name: 'SchemaTable',
@@ -20,8 +17,10 @@ export default {
      */
     columns: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
+    commonColumnProps: Object,
+    categoryColumnProps: Object,
     emptyCellValue: {
       type: String,
       default: '-'
@@ -62,19 +61,26 @@ export default {
       let index = 0
       const cloneColumns = cloneDeep(this.columns)
 
-      const deepHandler = columns => {
-        columns.forEach(column => {
-          column._key = this.generateColumnKey({ ...column, index: index++ })
+      const makeColumnHandle = columns => {
+        return columns.map(column => {
+          const columnProps = {}
+          const internalProps = {
+            _key: this.generateColumnKey({ ...column, index: index++ })
+          }
+
+          if (column.useCommon !== false) {
+            Object.assign(columnProps, this.commonColumnProps, get(this.categoryColumnProps, column.category))
+          }
 
           if (Array.isArray(column.children)) {
-            column.children = deepHandler(column.children)
+            internalProps.children = makeColumnHandle(column.children)
           }
-        })
 
-        return columns
+          return merge(columnProps, column, internalProps)
+        })
       }
 
-      return deepHandler(cloneColumns)
+      return makeColumnHandle(cloneColumns)
     },
     renderColumns(columns) {
       return columns.map(column => {
@@ -112,7 +118,7 @@ export default {
       }
 
       return this.$createElement(
-        TableColumnComponent,
+        'el-table-column',
         {
           key: column._key,
           props: column,
@@ -154,15 +160,25 @@ export default {
     }
   },
   render(h) {
-    return h(
-      TableComponent,
-      {
-        props: this.tableProps,
-        attrs: this.$attrs,
-        on: this.$listeners
-      },
-      this.renderColumns(this.internalColumns)
-    )
+    return h('el-table', {
+      props: this.tableProps,
+      attrs: this.$attrs,
+      on: this.$listeners,
+      scopedSlots: this._u(
+        [
+          // 解决table组件在jsx模式下$slots取不到append
+          {
+            key: 'append',
+            fn: () => this._t('append'),
+            proxy: true
+          }
+        ],
+        {
+          empty: () => this._t('empty'),
+          default: () => this.renderColumns(this.internalColumns)
+        }
+      )
+    })
   }
 }
 </script>
